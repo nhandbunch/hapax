@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<project name="xfltr_hapax" default="test" basedir=".">
+  <description>Build rules for the Hapax templating system (com.xfltr.hapax)</description>
+
+  <target name="globals">
+    <tstamp/>
+
+    <!-- Strings -->
+    <property name="name" value="xfltr-hapax"/>
+    <property name="version" value="1.0.5"/>
+
+    <!-- Paths -->
+    <property name="src" location="src"/>
+    <property name="test-src" location="test"/>
+    <property name="examples-src" location="examples"/>
+    <property name="build" location="classes"/>
+    <property name="test-build" location="test-classes"/>
+    <property name="examples-build" location="examples/classes"/>
+    <property name="dist" location="dist"/>
+    <property name="examples" location="examples"/>
+    <property name="lib" location="lib"/>
+    <property name="testresults" location="testresults"/>
+    <property name="docs" location="docs"/>
+
+    <!-- Misc config -->
+    <property name="junitformatter" value="xml"/>
+
+    <!-- Classpath for compile steps -->
+    <path id="compile.class.path">
+      <!-- No dependencies for compiling core functionality -->
+    </path>
+
+    <!-- Classpath for compiling tests -->
+    <path id="test.class.path">
+      <path refid="compile.class.path"/>
+      <fileset dir="${lib}/junit">
+         <include name="junit-3.8.1.jar"/>
+      </fileset>
+      <pathelement location="${build}"/>
+    </path>
+
+    <!-- Classpath for running the tests -->
+    <path id="run.test.class.path">
+      <path refid="test.class.path"/>
+      <pathelement location="${test-build}"/>
+    </path>
+
+    <!-- Classpath for building examples -->
+    <path id="examples.class.path">
+      <pathelement location="${dist}/${name}-${version}.jar"/>
+    </path>
+
+    <!-- Classpath for running examples -->
+    <path id="run.examples.class.path">
+      <path refid="examples.class.path"/>
+      <pathelement location="${examples-build}"/>
+    </path>
+
+  </target>
+
+  <target name="create-directories" depends="globals">
+    <tstamp/>
+    <mkdir dir="${dist}"/>
+    <mkdir dir="${build}"/>
+    <mkdir dir="${test-build}"/>
+    <mkdir dir="${testresults}"/>
+  </target>
+
+  <target name="prep" depends="globals, create-directories"/>
+
+  <target name="docs" depends="prep">
+    <javadoc 
+      sourcepath="${src}" 
+      destdir="${docs}"
+      />
+  </target>
+
+  <target name="compile-core" depends="prep">
+    <javac srcdir="${src}" destdir="${build}">
+      <include name="com/xfltr/hapax/**"/>
+      <classpath refid="compile.class.path"/>
+    </javac>
+  </target>
+
+  <target name="compile-tests" depends="prep, compile-core">
+    <javac srcdir="${test-src}" destdir="${test-build}">
+      <classpath refid="test.class.path"/>
+    </javac>
+  </target>
+
+  <target name="dist-bin" 
+          depends="compile-core, test" 
+          description="Create JAR with only the class files required to use Hapax">
+    <jar jarfile="${dist}/${name}-${version}.jar"
+         basedir="${build}"
+         index="no"
+         compress="yes"/>
+  </target>
+
+  <target name="dist-src" 
+          depends="dist-bin, test" 
+          description="Create ZIP with all the source code">
+    <jar destfile="${dist}/${name}-${version}-src.jar">
+      <fileset dir="${src}"/>
+      <fileset dir="${test-src}"/>
+      <fileset dir="${examples-src}"/>
+      <fileset file="LICENSE"/>
+    </jar>
+  </target>
+
+  <target name="dist-complete" 
+          depends="dist-src, dist-bin, compile-examples"
+          description="Create ZIP file with all code, Ant scripts, compiled versions, etc.">
+    <zip destfile="${dist}/${name}-${version}-complete.zip">
+      <zipfileset file="build-hapax.xml"/>
+      <zipfileset file="LICENSE"/>
+      <zipfileset prefix="src" dir="${src}"/>
+      <zipfileset prefix="test" dir="${test-src}"/>
+      <zipfileset prefix="examples" dir="${examples-src}"/>
+      <zipfileset prefix="classes" dir="${build}"/>
+      <zipfileset prefix="test-classes" dir="${test-build}" />
+      <zipfileset prefix="dist" file="${dist}/${name}-${version}-src.jar"/>
+      <zipfileset prefix="dist" file="${dist}/${name}-${version}.jar"/>
+    </zip>
+  </target>
+
+  <target name="dist-all" depends="dist-bin, dist-src, dist-complete"/>
+
+  <target name="compile-examples" depends="dist-bin" description="Examples">
+    <mkdir dir="${examples-build}"/>
+    <javac srcdir="${examples-src}" destdir="${examples-build}">
+      <classpath refid="examples.class.path"/>
+    </javac>
+  </target>
+
+  <target name="examples-run" depends="compile-examples" description="Executes the examples">
+    <java classname="HelloWorldExample" fork="yes">
+      <classpath refid="run.examples.class.path"/>
+    </java>
+    <java classname="TemplateCacheExample" fork="yes" dir="${examples}">
+      <classpath refid="run.examples.class.path"/>
+    </java>
+  </target>
+
+  <target name="test" depends="compile-core, compile-tests" description="Runs all template tests">
+    <junit>
+      <classpath refid="run.test.class.path"/>
+      <formatter type="${junitformatter}"/>
+      <batchtest todir="${testresults}">
+        <fileset dir="${test-src}">
+          <include name="com/xfltr/hapax/**/*Test.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+
+    <junitreport todir="${testresults}">
+      <fileset dir="${testresults}">
+        <include name="TEST-*.xml" />
+      </fileset>
+      <report todir="${testresults}" />
+    </junitreport>
+  </target>
+
+  <target name="clean"
+          description="clean up" 
+          depends="globals">
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+    <delete dir="${test-build}"/>
+    <delete dir="${testresults}"/>
+    <delete dir="${examples-build}"/>
+    <delete dir="${docs}"/>
+  </target>
+</project>
