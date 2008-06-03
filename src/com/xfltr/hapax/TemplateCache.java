@@ -3,7 +3,11 @@ package com.xfltr.hapax;
 import com.xfltr.hapax.parser.CTemplateParser;
 import com.xfltr.hapax.parser.TemplateParser;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +19,7 @@ import java.util.Map;
  *
  * See examples/TemplateCacheExample.java for an example of how to use
  * TemplateCache.
- * 
+ *
  * It is recommended that you place a reference to your TemplateCache instance
  * in some globally accessible location so that you use a single cache across
  * multiple requests.
@@ -23,6 +27,7 @@ import java.util.Map;
  * @author dcoker
  */
 public class TemplateCache implements TemplateLoader {
+
   private final Map<String, Template> templates_ =
       new HashMap<String, Template>();
   private final Map<String, Long> lastUpdated_ =
@@ -31,7 +36,7 @@ public class TemplateCache implements TemplateLoader {
   private final TemplateParser parser_;
 
   /**
-   * Creates a TemplateLoader using the CTemplateParser.   
+   * Creates a TemplateLoader using the CTemplateParser.
    */
   public static TemplateLoader create(String base_path) {
     return new TemplateCache(CTemplateParser.create(), base_path);
@@ -43,19 +48,16 @@ public class TemplateCache implements TemplateLoader {
   public static TemplateLoader createForParser(String base_path,
                                                TemplateParser parser) {
     return new TemplateCache(parser, base_path);
-
   }
 
   /**
    * Parses and fetches a template from disk.
    *
-   * @param filename The path to the template, relative to the templateDirectory passed to the
-   *                 ctor of TemplateCache.
-   * @return
-   * @throws TemplateException
+   * @param filename The path to the template, relative to the templateDirectory
+   *                 passed to the ctor of TemplateCache.
    */
   public Template getTemplate(String filename) throws TemplateException {
-    filename = basePath_ + "/" + filename;
+    filename = PathUtil.join(basePath_, filename);
 
     // We check the last modified timestamp on the template once per render.
     // If the template has changed, we reload and reparse it.  Otherwise, we
@@ -89,26 +91,20 @@ public class TemplateCache implements TemplateLoader {
   }
 
   /**
-   * Parses and fetches a template from a subdirectory of the configured basePath.
-   * This is useful when fetching templates with paths relative to other
-   * templates (such as in includes).
+   * Parses and fetches a template from a subdirectory of the configured
+   * basePath. This is useful when fetching templates with paths relative to
+   * other templates (such as in includes).
    *
    * TODO: This smells.
-   *
-   * @param filename
-   * @param templateDirectory
-   * @return
-   * @throws TemplateException
    */
   public Template getTemplate(String filename, String templateDirectory)
       throws TemplateException {
     assert templateDirectory.startsWith(basePath_);
     String directory_relative_to_template_directory =
-        templateDirectory.replace(basePath_, "");
+        PathUtil.makeRelative(basePath_, "");
     // Construct the filename that we use in the cache
-    filename = new StringBuilder()
-        .append(directory_relative_to_template_directory).append("/")
-        .append(filename).toString();
+    filename =
+        PathUtil.join(directory_relative_to_template_directory, filename);
     return getTemplate(filename);
   }
 
@@ -134,7 +130,7 @@ public class TemplateCache implements TemplateLoader {
 
   private boolean inCache(String filename, long last_modified) {
     return lastUpdated_.containsKey(filename) &&
-        lastUpdated_.get(filename) >= last_modified;
+           lastUpdated_.get(filename) >= last_modified;
   }
 
   private void updateCache(String filename, Template results,

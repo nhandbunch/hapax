@@ -1,6 +1,7 @@
 package com.xfltr.hapax.parser;
 
 import com.xfltr.hapax.Template;
+
 import junit.framework.TestCase;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.logging.Logger;
  * @author dcoker
  */
 public class EztParserTest extends TestCase {
+
   private static final Logger logger =
       Logger.getLogger(EztParserTest.class.getSimpleName());
 
@@ -27,7 +29,9 @@ public class EztParserTest extends TestCase {
       {"[if-any title]Issue[else]No issue[end]", "5"},
       {"[define title][end][if-any title]Issue[end]", "5"},
       {"[define title][end][if-any title]Issue[else]No issue[end]", "7"},
-      {"[define  whitespace ][end][if-any whitespace]Issue[else]No issue[end]", "7"},
+      {"[define  whitespace ][end][if-any whitespace]Issue[else]No issue[end]",
+       "7"},
+      {"[define title][end][define breadcrumbs][end]", "4"},
   };
 
   private static String[] PARSE_FAILURES = {
@@ -51,7 +55,7 @@ public class EztParserTest extends TestCase {
         logger.info(templateNode.getClass().getSimpleName());
       }
       assertEquals(template, Integer.valueOf(expected_length).intValue(),
-          list.size());
+                   list.size());
     }
   }
 
@@ -60,7 +64,7 @@ public class EztParserTest extends TestCase {
       try {
         Template.parse(EztParser.create(), template);
         fail("Template '" + template +
-            "' should have thrown TemplateParserException.");
+             "' should have thrown TemplateParserException.");
       } catch (TemplateParserException e) {
         // pass
       }
@@ -70,20 +74,21 @@ public class EztParserTest extends TestCase {
   public void testParserGeneratesExpectedNodes()
       throws TemplateParserException {
     assertEquals(EztEndNode.class,
-        EztParser.create().parse("[end]").get(0).getClass());
+                 EztParser.create().parse("[end]").get(0).getClass());
     assertEquals(EztConditionalNode.class,
-        EztParser.create().parse("[if-any monkey]").get(0).getClass());
+                 EztParser.create().parse("[if-any monkey]").get(0).getClass());
     assertEquals(EztConditionalNode.class,
-        EztParser.create().parse("[is x \"yz\"]").get(0).getClass());
+                 EztParser.create().parse("[is x \"yz\"]").get(0).getClass());
     assertEquals(EztDefineNode.class,
-        EztParser.create().parse("[define monkey]").get(0).getClass());
+                 EztParser.create().parse("[define monkey]").get(0).getClass());
     EztParser eztParser = EztParser.create();
     List<TemplateNode> list = eztParser.parse("[include \"hello\"]");
     assertEquals(EztIncludeNode.class,
-        list.get(0).getClass());
+                 list.get(0).getClass());
     assertEquals(EztIncludeNode.class,
-        EztParser.create().parse("[include var]").get(0).getClass());
+                 EztParser.create().parse("[include var]").get(0).getClass());
     assertEquals(EztIncludeNode.class,
-        EztParser.create().parse("[insertfile var]").get(0).getClass());
+                 EztParser.create().parse("[insertfile var]")
+                     .get(0).getClass());
   }
 }
