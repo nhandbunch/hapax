@@ -1,12 +1,15 @@
 package com.xfltr.hapax;
 
 import static com.xfltr.hapax.Template.parse;
+import com.xfltr.hapax.parser.CyclicIncludeException;
 import com.xfltr.hapax.parser.EztParser;
 import com.xfltr.hapax.parser.TemplateParser;
 import com.xfltr.hapax.parser.TemplateParserException;
+
 import junit.framework.TestCase;
 
 public class EztTest extends TestCase {
+
   private TemplateDictionary dict_;
 
   // These are templates that should render succesfully.
@@ -28,9 +31,9 @@ public class EztTest extends TestCase {
       {"[[][# comments]", "["},
       {"[if-any x]X[else]Y[end][if-any a]B[else]C[end]", "YC"},
       {"[define  whitespace ][end][if-any whitespace]Issue[else]No issue[end]",
-          "No issue"},
+       "No issue"},
       {"[define nest.var2]x[end][if-any nest.var2][nest.var2][else]fail[end]",
-          "x"},
+       "x"},
   };
 
   // The next two static variables are lists of templates that should throw
@@ -55,7 +58,7 @@ public class EztTest extends TestCase {
       String template = strings[0];
       String expected_result = strings[1];
       assertEquals(template, expected_result,
-          parseEzt(template).renderToString(dict));
+                   parseEzt(template).renderToString(dict));
     }
   }
 
@@ -66,7 +69,7 @@ public class EztTest extends TestCase {
       try {
         t.renderToString(dict);
         fail("Template '" + template +
-            "' should have thrown TemplateException.");
+             "' should have thrown TemplateException.");
       } catch (TemplateException e) {
         // pass
       }
@@ -87,7 +90,7 @@ public class EztTest extends TestCase {
     String template =
         "[if-any title]Issue[else][if-any wombat][wombat][else]No issue[end][end]";
     assertEquals(template, "hello",
-        parse(EztParser.create(), template).renderToString(td));
+                 parse(EztParser.create(), template).renderToString(td));
   }
 
   public void testIfAnyMissingEndThrowsException()
@@ -105,7 +108,7 @@ public class EztTest extends TestCase {
     try {
       parseEzt("[define]X");
       fail("[define] is recognized as a valid variable name, " +
-          "and it shouldn't be.");
+           "and it shouldn't be.");
     } catch (TemplateException e) {
       // do nothing
     }
@@ -126,7 +129,7 @@ public class EztTest extends TestCase {
     loader.put("x.ezt", "hello");
     loader.put("parent.ezt", "[include \"x.ezt\"]");
     assertEquals("hello",
-        loader.getTemplate("parent.ezt").renderToString(dict_));
+                 loader.getTemplate("parent.ezt").renderToString(dict_));
   }
 
   public void testIncludesWithLeadingHtmlString() throws TemplateException {
@@ -134,7 +137,23 @@ public class EztTest extends TestCase {
     loader.put("/x.ezt", "hello");
     loader.put("parent.ezt", "[include \"/html/x.ezt\"]");
     assertEquals("hello",
-        loader.getTemplate("parent.ezt").renderToString(dict_));
+                 loader.getTemplate("parent.ezt").renderToString(dict_));
+  }
+
+  public void testCyclicIncludesThrowException() throws TemplateException {
+    dict_.put("x", "x.ezt");
+    dict_.put("y", "y.ezt");
+    dict_.put("z", "z.ezt");
+
+    MockTemplateLoader loader = new MockTemplateLoader(EztParser.create());
+    loader.put("x.ezt", "[include y]");
+    loader.put("y.ezt", "[include x]");
+    try {
+      loader.getTemplate("x.ezt").renderToString(dict_);
+      fail("Failed to throw exception when templates have cyclic includes.");
+    } catch (CyclicIncludeException e) {
+      // pass
+    }
   }
 
   public void testIncludesWithVariableFilename() throws TemplateException {
@@ -143,7 +162,7 @@ public class EztTest extends TestCase {
     loader.put("x.ezt", "hello");
     loader.put("parent.ezt", "[include x]");
     assertEquals("hello",
-        loader.getTemplate("parent.ezt").renderToString(dict_));
+                 loader.getTemplate("parent.ezt").renderToString(dict_));
   }
 
   // TODO: implement this feature
