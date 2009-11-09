@@ -27,17 +27,16 @@ public class IncludeNode extends TemplateNode {
   }
 
   @Override
-  public void evaluate(TemplateDictionary dict,
+  public final void evaluate(TemplateDictionary dict,
                        TemplateLoaderContext context, PrintWriter collector)
       throws TemplateException {
-    String include_name = includeName;
 
     // The filename is stored as a standard variable.
-    String filename = dict.get(include_name);
+    String filename = dict.get(includeName);
     if (filename == null) {
       throw new TemplateException(
           "The template identifier for included section "
-              + include_name + " is not set!");
+              + includeName + " is not set!");
     }
 
     Template incl_tmpl = context.getLoader().getTemplate(filename,
@@ -54,7 +53,7 @@ public class IncludeNode extends TemplateNode {
       collector = new PrintWriter(sw);
     }
 
-    List<TemplateDictionary> child_dicts = dict.getChildDicts(include_name);
+    List<TemplateDictionary> child_dicts = dict.getChildDicts(includeName);
     if (child_dicts.size() == 0) {
       incl_tmpl.render(dict, collector);
     } else {

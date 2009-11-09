@@ -124,6 +124,26 @@ public class CTemplateTest extends TestCase {
     assertEquals("Plain TextPlain Text", t.renderToString(td));
   }
 
+  // http://code.google.com/p/hapax/issues/detail?id=2
+  public void testIncludesWithSubdirectoriesWork() throws TemplateException {
+    MockTemplateLoader mock = new MockTemplateLoader();
+    mock.put("test/b.xtm", "b");
+    Template t = Template.parse("a{{>B}}cdefg");
+    t.setLoader(mock);
+    TemplateDictionary td = TemplateDictionary.create();
+    td.put("B", "test/b.xtm");
+    assertEquals("abcdefg", t.renderToString(td));
+  }
+
+  // http://code.google.com/p/hapax/issues/detail?id=1
+  public void testEncodingDefault() throws TemplateException {
+    Template tmpl = Template.parse("Hello-you, {{WORLD:h}}");
+    TemplateDictionary dict = TemplateDictionary.create();
+    dict.put("WORLD", "Iapetus");
+    System.out.println(tmpl.renderToString(dict));
+    assertEquals("Hello-you, Iapetus", tmpl.renderToString(dict));
+  }
+
   public void testIncludesReadVariablesFromParentDict()
       throws TemplateException {
     MockTemplateLoader mock = new MockTemplateLoader();

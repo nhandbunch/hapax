@@ -61,7 +61,6 @@ public class CTemplateParserTest extends TestCase {
   private void assertExpectedNodeListLength(String input, int expected_length)
       throws TemplateParserException {
     CTemplateParser tp = CTemplateParser.create();
-    tp.parse(input);
-    assertEquals(expected_length, tp.getNodeList().size());
+    assertEquals(expected_length, tp.parse(input).size());
   }
 }
