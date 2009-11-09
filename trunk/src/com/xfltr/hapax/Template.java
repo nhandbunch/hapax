@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  *
  * @author dcoker
  */
-public class Template {
+public final class Template {
   private static final Logger logger_ =
       Logger.getLogger(Template.class.getSimpleName());
 
@@ -61,7 +61,7 @@ public class Template {
     this.tmpl_ = tmpl;
   }
 
-  private void render(final List<TemplateNode> list,
+  private void render(List<TemplateNode> list,
                       final TemplateDictionary td,
                       final PrintWriter pw)
       throws TemplateException {
